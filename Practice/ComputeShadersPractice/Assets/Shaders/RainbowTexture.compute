@@ -5,10 +5,38 @@
 // with cs.SetTexture
 RWTexture2D<float4> Result;
 
-[numthreads(8,8,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
-{
-    // TODO: insert actual code here!
+// The highest possible x/y index for this calculation
+int SideLen;
 
-    Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+[numthreads(8, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    /* Scale red, green, and blue values by distance from their 'origin points'
+       This is done by calculating the current distance and dividing it by the maximum to get a percentage. Which is then subtracted from 1
+       The color values are then scaled by that difference.
+    */
+    float maxDist = SideLen;
+    
+    int xInt = id.x;
+    int yInt = id.y;
+    
+    float redDist = sqrt(pow(xInt, 2) + pow(yInt, 2));
+    float redDistPercent = redDist / maxDist;
+    float redComp = 1.0 - redDistPercent;
+    //float redComp = 1.0 * redDistPercent;
+    
+    float greenDist = sqrt(pow(xInt, 2) + pow(yInt - SideLen, 2));
+    float greenDistPercent = greenDist / maxDist;
+    float greenComp = 1.0 - greenDistPercent;
+    //float greenComp = 1 * greenDistPercent;
+    
+    float blueDist = sqrt(pow(xInt - SideLen, 2) + pow(yInt, 2));
+    float blueDistPercent = blueDist / maxDist;
+    float blueComp = 1.0 - blueDistPercent;
+    //float blueComp = 255.0 * blueDistPercent;
+    
+ 
+    
+    // Set value in texture
+    Result[id.xy] = float4(redComp, greenComp, blueComp, 0.0);
 }
